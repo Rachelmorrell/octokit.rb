@@ -1,0 +1,11 @@
+linters:
+  rubocop:
+    fixer: true
+  shellcheck:
+    shell: bash
+  csslint: {  }
+files:
+  ignore:
+    - 'bower_components/*'
+fixers:
+  enable: true
