@@ -293,11 +293,14 @@ describe Octokit::Client do
 
     describe "when application authenticated" do
       it "makes authenticated calls" do
-        client = Octokit.client
-        client.client_id     = '97b4937b385eb63d1f46'
-        client.client_secret = 'd255197b4937b385eb63d1f4677e3ffee61fbaea'
+        client = Octokit::Client.new(
+          client_id: '97b4937b385eb63d1f46',
+          client_secret: 'd255197b4937b385eb63d1f4677e3ffee61fbaea'
+        )
 
-        root_request = stub_get("/?client_id=97b4937b385eb63d1f46&client_secret=d255197b4937b385eb63d1f4677e3ffee61fbaea")
+        root_request = stub_request(:get, github_url("/"))
+          .with(basic_auth: ["97b4937b385eb63d1f46", "d255197b4937b385eb63d1f4677e3ffee61fbaea"])
+
         client.get("/")
         assert_requested root_request
       end
@@ -327,7 +330,8 @@ describe Octokit::Client do
     end
 
     it "passes app creds in the query string" do
-      root_request = stub_get("/?client_id=97b4937b385eb63d1f46&client_secret=d255197b4937b385eb63d1f4677e3ffee61fbaea")
+      root_request = stub_request(:get, github_url("/"))
+          .with(basic_auth: ['97b4937b385eb63d1f46', 'd255197b4937b385eb63d1f4677e3ffee61fbaea'])
       client = Octokit.client
       client.client_id     = '97b4937b385eb63d1f46'
       client.client_secret = 'd255197b4937b385eb63d1f4677e3ffee61fbaea'
@@ -464,7 +468,7 @@ describe Octokit::Client do
       client = Octokit::Client.new
       client.client_id     = key = '97b4937b385eb63d1f46'
       client.client_secret = secret = 'd255197b4937b385eb63d1f4677e3ffee61fbaea'
-      root_request = stub_get "/?client_id=#{key}&client_secret=#{secret}"
+      root_request = stub_request(:get, github_url("/")).with(basic_auth: [key, secret])
 
       client.get("/")
       assert_requested root_request
@@ -890,6 +894,14 @@ describe Octokit::Client do
         },
         :body => {:message => "The repository has been disabled due to a billing issue with the owner account."}.to_json
       expect { Octokit.post("/user/repos") }.to raise_error Octokit::BillingIssue
+
+      stub_get('/teams/8675309').to_return \
+        :status => 403,
+        :headers => {
+            :content_type => "application/json",
+        },
+        :body => {:message => "Resource protected by organization SAML enforcement. You must grant your personal token access to this organization."}.to_json
+      expect { Octokit.get("/teams/8675309") }.to raise_error Octokit::SAMLProtected
 
       stub_get('/torrentz').to_return \
         :status => 451,
